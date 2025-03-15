@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  lotus-api:
+    container_name: lotus-api
+    image: lotus-api
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /usr/src/app
+    ports:
+      - '${APP_PORT}:${APP_PORT}'
+    command: >
+      /bin/sh -c "npm run start:dev"
+    env_file: .env
+    init: true
+    volumes:
+      - .:/usr/src/app
+      - ./models:/usr/src/app/models
+    networks:
+      - bridge_network
+ 
+volumes:
+  models:
+    driver: local
+
+networks:
+  bridge_network:
+    external: true
