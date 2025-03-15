@@ -1,52 +1,53 @@
-const Fastify = require( 'fastify' )
-const boom = require( '@hapi/boom' )
+const Fastify = require('fastify')
+const boom = require('@hapi/boom')
+const { NOT_FOUND, INTERNAL_SERVER_ERROR } = require('./consts/httpErrors')
 
 const Build = async () => {
-  const fastify = Fastify({
-    logger: true,
-    trustProxy: true,
-    bodyLimit: 1048576 * 10
-  })
-  
-  await fastify.register( require('@fastify/etag') )
-  await fastify.register( require('@fastify/helmet') )
-  await fastify.register( require('@fastify/cors'), { origin: '*' } )
-  await fastify.register( require( './core/auth' ) )
-  await fastify.register( require( './routes/http' ), { prefix: 'api/v1' } )
+	const fastify = Fastify({
+		logger: true,
+		trustProxy: true,
+		bodyLimit: 1048576 * 10
+	})
 
-  fastify.setNotFoundHandler((request, reply) => {
-    fastify.log.debug(`Route not found: ${request.method}:${request.raw.url}`)
+	await fastify.register(require('@fastify/etag'))
+	await fastify.register(require('@fastify/helmet'))
+	await fastify.register(require('@fastify/cors'), { origin: '*' })
+	await fastify.register(require('./core/auth'))
+	await fastify.register(require('./routes/http'), { prefix: 'api/v1' })
 
-    reply.status(404).send({
-      statusCode: 404,
-      error: NOT_FOUND,
-      message: `Route ${request.method}:${request.raw.url} not found`
-    })
-  })
+	fastify.setNotFoundHandler((request, reply) => {
+		fastify.log.debug(`Route not found: ${request.method}:${request.raw.url}`)
 
-  fastify.setErrorHandler((err, request, reply) => {
-    fastify.log.debug(`Request url: ${request?.raw?.url}`)
-    fastify.log.debug(`Payload: ${request?.body}`)
-    fastify.log.error(`Error occurred: ${err}`)
+		reply.status(404).send({
+			statusCode: 404,
+			error: NOT_FOUND,
+			message: `Route ${request.method}:${request.raw.url} not found`
+		})
+	})
 
-    const code = err.statusCode ?? 500
+	fastify.setErrorHandler((err, request, reply) => {
+		fastify.log.debug(`Request url: ${request?.raw?.url}`)
+		fastify.log.debug(`Payload: ${request?.body}`)
+		fastify.log.error(`Error occurred: ${err}`)
 
-    reply.status(code).send({
-      statusCode: code,
-      error: err.name ?? INTERNAL_SERVER_ERROR,
-      message: err.message ?? err
-    })
-  })
+		const code = err.statusCode ?? 500
 
-  fastify.get( '/', async () => {
-    try {
-      return { message: 'Golden Hotel API Running!!!' };
-    } catch ( err ) {
-      throw boom.boomify( err )
-    }
-  } )
+		reply.status(code).send({
+			statusCode: code,
+			error: err.name ?? INTERNAL_SERVER_ERROR,
+			message: err.message ?? err
+		})
+	})
 
-  return fastify
+	fastify.get('/', async () => {
+		try {
+			return { message: 'Golden Hotel API Running!!!' }
+		} catch (err) {
+			throw boom.boomify(err)
+		}
+	})
+
+	return fastify
 }
 
 module.exports = Build
